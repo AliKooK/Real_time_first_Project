@@ -1,0 +1,29 @@
+# Compiler and flags
+CC = gcc
+CFLAGS = -Wall -Wextra -g -O2
+
+# Targets
+DEMO = menu_demo_v2
+
+# Source files for the new modular demo
+DEMO_SOURCES = menu_demo_v2.c matrix_utils.c matrix_file_ops.c
+DEMO_OBJECTS = $(DEMO_SOURCES:.c=.o)
+
+# Build the new demo
+$(DEMO): $(DEMO_OBJECTS)
+	@echo "Linking $(DEMO)..."
+	$(CC) $(CFLAGS) -o $(DEMO) $(DEMO_OBJECTS)
+	@echo "Build complete! Run with: ./$(DEMO)"
+
+# Compile source files
+%.o: %.c matrix_types.h matrix_file_ops.h
+	@echo "Compiling $<..."
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Clean
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -f $(DEMO_OBJECTS) $(DEMO)
+	@echo "Clean complete."
+
+.PHONY: clean
