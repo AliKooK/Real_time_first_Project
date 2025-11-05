@@ -1,22 +1,23 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g -O2
+CFLAGS = -Wall -Wextra -g -O2 -fopenmp
+LDFLAGS = -fopenmp
 
 # Targets
 DEMO = menu_demo_v2
 
 # Source files for the new modular demo
-DEMO_SOURCES = menu_demo_v2.c matrix_utils.c matrix_file_ops.c
+DEMO_SOURCES = menu_demo_v2.c matrix_utils.c matrix_file_ops.c matrix_arithmetic.c matrix_arithmetic_parallel.c
 DEMO_OBJECTS = $(DEMO_SOURCES:.c=.o)
 
 # Build the new demo
 $(DEMO): $(DEMO_OBJECTS)
 	@echo "Linking $(DEMO)..."
-	$(CC) $(CFLAGS) -o $(DEMO) $(DEMO_OBJECTS)
+	$(CC) $(LDFLAGS) -o $(DEMO) $(DEMO_OBJECTS)
 	@echo "Build complete! Run with: ./$(DEMO)"
 
 # Compile source files
-%.o: %.c matrix_types.h matrix_file_ops.h
+%.o: %.c matrix_types.h matrix_file_ops.h matrix_arithmetic.h matrix_arithmetic_parallel.h
 	@echo "Compiling $<..."
 	$(CC) $(CFLAGS) -c $< -o $@
 

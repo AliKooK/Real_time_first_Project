@@ -5,6 +5,8 @@
 #include <signal.h>
 #include "matrix_types.h"
 #include "matrix_file_ops.h"
+#include "matrix_arithmetic.h"
+#include "matrix_arithmetic_parallel.h"
 
 /*
  * Professional interactive menu (modular version)
@@ -289,6 +291,129 @@ static void handle_save_all(MatrixCollection *col) {
     save_all_matrices_to_folder(col, path);
 }
 
+static void handle_add_matrices(MatrixCollection *col) {
+    puts("--- Add Two Matrices (Performance Comparison) ---");
+    if (col->count < 2) {
+        puts("Need at least 2 matrices in memory to perform addition.");
+        return;
+    }
+
+    char name1[64], name2[64], result_name[64];
+    
+    int rc = read_line_prompt("Enter first matrix name: ", name1, sizeof(name1));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    rc = read_line_prompt("Enter second matrix name: ", name2, sizeof(name2));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    rc = read_line_prompt("Enter result matrix name: ", result_name, sizeof(result_name));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    Matrix *m1 = find_matrix(col, name1);
+    Matrix *m2 = find_matrix(col, name2);
+
+    if (!m1) { printf("Matrix '%s' not found.\n", name1); return; }
+    if (!m2) { printf("Matrix '%s' not found.\n", name2); return; }
+
+    // Run all three methods and compare performance
+    PerformanceMetrics metrics;
+    Matrix *result = run_operation_comparison(m1, m2, result_name, "Addition", &metrics);
+    
+    if (result) {
+        if (!add_matrix(col, result)) {
+            printf("Warning: Could not add result matrix '%s' to collection.\n", result_name);
+            free_matrix(result);
+        } else {
+            printf("✓ Result matrix '%s' added to collection.\n", result_name);
+        }
+    }
+}
+
+static void handle_subtract_matrices(MatrixCollection *col) {
+    puts("--- Subtract Two Matrices (Performance Comparison) ---");
+    if (col->count < 2) {
+        puts("Need at least 2 matrices in memory to perform subtraction.");
+        return;
+    }
+
+    char name1[64], name2[64], result_name[64];
+    
+    int rc = read_line_prompt("Enter first matrix name (minuend): ", name1, sizeof(name1));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    rc = read_line_prompt("Enter second matrix name (subtrahend): ", name2, sizeof(name2));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    rc = read_line_prompt("Enter result matrix name: ", result_name, sizeof(result_name));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    Matrix *m1 = find_matrix(col, name1);
+    Matrix *m2 = find_matrix(col, name2);
+
+    if (!m1) { printf("Matrix '%s' not found.\n", name1); return; }
+    if (!m2) { printf("Matrix '%s' not found.\n", name2); return; }
+
+    // Run all three methods and compare performance
+    PerformanceMetrics metrics;
+    Matrix *result = run_operation_comparison(m1, m2, result_name, "Subtraction", &metrics);
+    
+    if (result) {
+        if (!add_matrix(col, result)) {
+            printf("Warning: Could not add result matrix '%s' to collection.\n", result_name);
+            free_matrix(result);
+        } else {
+            printf("✓ Result matrix '%s' added to collection.\n", result_name);
+        }
+    }
+}
+
+static void handle_multiply_matrices(MatrixCollection *col) {
+    puts("--- Multiply Two Matrices (Performance Comparison) ---");
+    if (col->count < 2) {
+        puts("Need at least 2 matrices in memory to perform multiplication.");
+        return;
+    }
+
+    char name1[64], name2[64], result_name[64];
+    
+    int rc = read_line_prompt("Enter first matrix name: ", name1, sizeof(name1));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    rc = read_line_prompt("Enter second matrix name: ", name2, sizeof(name2));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    rc = read_line_prompt("Enter result matrix name: ", result_name, sizeof(result_name));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    Matrix *m1 = find_matrix(col, name1);
+    Matrix *m2 = find_matrix(col, name2);
+
+    if (!m1) { printf("Matrix '%s' not found.\n", name1); return; }
+    if (!m2) { printf("Matrix '%s' not found.\n", name2); return; }
+
+    // Run all three methods and compare performance
+    PerformanceMetrics metrics;
+    Matrix *result = run_operation_comparison(m1, m2, result_name, "Multiplication", &metrics);
+    
+    if (result) {
+        if (!add_matrix(col, result)) {
+            printf("Warning: Could not add result matrix '%s' to collection.\n", result_name);
+            free_matrix(result);
+        } else {
+            printf("✓ Result matrix '%s' added to collection.\n", result_name);
+        }
+    }
+}
+
 static void handle_action(int choice, MatrixCollection *col) {
     switch (choice) {
         case 1:  handle_enter_matrix(col); break;
@@ -300,9 +425,9 @@ static void handle_action(int choice, MatrixCollection *col) {
         case 7:  handle_save_to_file(col); break;
         case 8:  handle_save_all(col); break;
         case 9:  display_all_matrices(col); break;
-        case 10: puts("→ Add 2 matrices (stub)"); break;
-        case 11: puts("→ Subtract 2 matrices (stub)"); break;
-        case 12: puts("→ Multiply 2 matrices (stub)"); break;
+        case 10: handle_add_matrices(col); break;
+        case 11: handle_subtract_matrices(col); break;
+        case 12: handle_multiply_matrices(col); break;
         case 13: puts("→ Find determinant (stub)"); break;
         case 14: puts("→ Find eigenvalues & eigenvectors (stub)"); break;
         default: puts("→ Unknown action"); break;
