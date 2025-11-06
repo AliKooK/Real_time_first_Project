@@ -7,6 +7,9 @@
 #include "matrix_file_ops.h"
 #include "matrix_arithmetic.h"
 #include "matrix_arithmetic_parallel.h"
+#include "determinant_gauss.h"
+#include "determinant_parallel.h"
+#include "eigen_qr.h"
 
 /*
  * Professional interactive menu (modular version)
@@ -414,6 +417,88 @@ static void handle_multiply_matrices(MatrixCollection *col) {
     }
 }
 
+/* ===== Option 13: Determinant (Gaussian elimination with partial pivoting) ===== */
+static void handle_determinant(MatrixCollection *col) {
+    puts("--- Determinant (Gaussian Elimination with Partial Pivoting) ---");
+    puts("(Single-thread vs OpenMP vs Multiprocessing)\n");
+    char name[MAX_NAME_LENGTH];
+    int rc = read_line_prompt("Enter matrix name: ", name, sizeof(name));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    Matrix *m = find_matrix(col, name);
+    if (!m) { printf("Matrix '%s' not found.\n", name); return; }
+    if (m->rows != m->cols) {
+        printf("Matrix '%s' is not square (%dx%d). Determinant undefined.\n", name, m->rows, m->cols);
+        return;
+    }
+
+    PerformanceMetrics metrics;
+    double det = 0.0;
+    if (!run_determinant_comparison(m, &metrics, &det)) {
+        puts("Failed to compute determinant.");
+        return;
+    }
+
+    printf("Determinant of '%s': %.10g\n", m->name, det);
+}
+
+/* ===== Option 14: Eigenvalues & Eigenvectors (QR Iteration) ===== */
+static void handle_eigen(MatrixCollection *col) {
+    puts("--- Eigenvalues & Eigenvectors (QR Iteration) ---");
+    puts("(Single-thread vs OpenMP vs Multiprocessing)\n");
+    char name[MAX_NAME_LENGTH];
+    int rc = read_line_prompt("Enter matrix name: ", name, sizeof(name));
+    if (rc == -1) { puts("EOF. Exiting..."); return; }
+    if (rc == 0) { puts("Name cannot be empty."); return; }
+
+    Matrix *m = find_matrix(col, name);
+    if (!m) { printf("Matrix '%s' not found.\n", name); return; }
+    if (m->rows != m->cols) {
+        printf("Matrix '%s' is not square (%dx%d). Eigenvalues undefined.\n", name, m->rows, m->cols);
+        return;
+    }
+
+    int max_iter = 500;
+    double tol = 1e-10;
+    
+    PerformanceMetrics metrics;
+    EigenResult *result = run_eigen_comparison(m, max_iter, tol, &metrics);
+    
+    if (!result) {
+        puts("Failed to compute eigenvalues.");
+        return;
+    }
+
+    printf("\n========================================\n");
+    printf("EIGENVALUE & EIGENVECTOR RESULTS\n");
+    printf("========================================\n");
+    printf("Matrix: %s (%dx%d)\n", m->name, m->rows, m->cols);
+    printf("Converged in %d iterations\n\n", result->iterations);
+    
+    printf("Eigenvalues (%d):\n", result->n);
+    for (int i = 0; i < result->n; ++i) {
+        printf("  λ[%d] = %.10g\n", i, result->eigenvalues[i]);
+    }
+    
+    // Display full eigenvector matrix (columns are eigenvectors)
+    if (result->eigenvectors) {
+        printf("\nEigenvectors matrix [%dx%d] (columns are eigenvectors):\n", result->n, result->n);
+        for (int r = 0; r < result->n; ++r) {
+            printf("  [");
+            for (int c = 0; c < result->n; ++c) {
+                printf(" % .6f", result->eigenvectors->data[r][c]);
+            }
+            printf(" ]\n");
+        }
+    }
+    
+    printf("========================================\n\n");
+    
+    free_eigen_result(result);
+}
+
+
 static void handle_action(int choice, MatrixCollection *col) {
     switch (choice) {
         case 1:  handle_enter_matrix(col); break;
@@ -428,8 +513,8 @@ static void handle_action(int choice, MatrixCollection *col) {
         case 10: handle_add_matrices(col); break;
         case 11: handle_subtract_matrices(col); break;
         case 12: handle_multiply_matrices(col); break;
-        case 13: puts("→ Find determinant (stub)"); break;
-        case 14: puts("→ Find eigenvalues & eigenvectors (stub)"); break;
+        case 13: handle_determinant(col); break;
+        case 14: handle_eigen(col); break;
         default: puts("→ Unknown action"); break;
     }
 }
